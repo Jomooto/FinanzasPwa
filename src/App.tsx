@@ -5,7 +5,7 @@ import ExpenseForm from "./components/ExpenseForm";
 import CardManager from "./components/CardManager";
 import CategoryManager from "./components/CategoryManager";
 import DebtDashboard from "./components/DebtDashboard";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import type { Expense } from "./db/schema";
 import db from "./db/schema";
@@ -51,7 +51,8 @@ function Dashboard() {
   }, [categories]);
 
   // Moneda configurada por el usuario
-  const displayCurrency = localStorage.getItem("selectedCurrency") || "USD";
+  const displayCurrency =
+    localStorage.getItem("selectedCurrency") || (lang === "es" ? "MXN" : "USD");
 
   const formatCurrency = useCallback(
     (amount: number) => {
@@ -306,7 +307,7 @@ function Dashboard() {
             <h2 className="text-sm font-medium text-slate-300 mb-1">
               {t("total_balance_desc").replace("{currency}", displayCurrency)}
             </h2>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-2xl sm:text-3xl font-bold text-white">
               {formatCurrency(totalBalance)}
             </p>
           </div>
@@ -529,6 +530,17 @@ function Dashboard() {
 function App() {
   const { t } = useTranslation();
   const location = useLocation();
+  const [theme] = useState(() => localStorage.getItem("theme") || "dark");
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "light") {
+      root.classList.add("light-theme");
+    } else {
+      root.classList.remove("light-theme");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const getNavLinkClass = (path: string) => {
     return location.pathname === path
@@ -537,8 +549,24 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 to-black text-slate-100 font-sans selection:bg-blue-500/30">
-      <header className="sticky top-0 z-40 bg-black/50 backdrop-blur-lg border-b border-white/10">
+    <div
+      className="min-h-screen flex flex-col font-sans selection:bg-blue-500/30"
+      style={{
+        background:
+          theme === "light"
+            ? "linear-gradient(135deg, #f1f5f9, #e2e8f0)"
+            : "linear-gradient(135deg, #0f172a, #000)",
+        color: "var(--text-primary)",
+      }}
+    >
+      <header
+        className="sticky top-0 z-40 backdrop-blur-lg border-b"
+        style={{
+          backgroundColor:
+            theme === "light" ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.5)",
+          borderColor: "var(--border-color)",
+        }}
+      >
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -561,7 +589,14 @@ function App() {
         </Routes>
       </main>
 
-      <nav className="sticky bottom-0 bg-black/60 backdrop-blur-lg border-t border-white/10 pb-safe">
+      <nav
+        className="sticky bottom-0 backdrop-blur-lg border-t pb-safe"
+        style={{
+          backgroundColor:
+            theme === "light" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.6)",
+          borderColor: "var(--border-color)",
+        }}
+      >
         <div className="max-w-md mx-auto flex justify-between items-center px-6 h-16">
           <Link to="/" className={getNavLinkClass("/")}>
             <Wallet weight="duotone" size={24} />

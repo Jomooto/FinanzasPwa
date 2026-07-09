@@ -110,5 +110,10 @@
   "dropbox_connected": "Connected to Dropbox",
   "dropbox_not_connected": "No active Dropbox session.",
   "dropbox_clear_credentials": "Clear Dropbox credentials",
-  "dropbox_blocked_hint": "Dropbox sync unavailable. Browser is blocking Dropbox scripts. Use Safari or Incognito window."
+  "dropbox_blocked_hint": "Dropbox sync unavailable. Browser is blocking Dropbox scripts. Use Safari or Incognito window.",
+  "currency": "Currency",
+  "currency_search": "Search currency...",
+  "appearance": "Appearance",
+  "light_mode": "Light mode",
+  "dark_mode": "Dark mode"
 }

@@ -33,7 +33,10 @@ interface ExpenseFormProps {
 const getInitialDate = () => new Date().toISOString().split("T")[0];
 const getInitialCurrency = (expense?: Expense) => {
   if (expense) return expense.currency;
-  return localStorage.getItem("selectedCurrency") || "USD";
+  const stored = localStorage.getItem("selectedCurrency");
+  if (stored) return stored;
+  const lang = navigator.language.split("-")[0];
+  return lang === "es" ? "MXN" : "USD";
 };
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, expense }) => {

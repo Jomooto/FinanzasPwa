@@ -9,6 +9,9 @@ import {
   PencilSimple,
   ChartBar,
   CloudArrowUp,
+  CurrencyCircleDollar,
+  SunDim,
+  Moon,
 } from "@phosphor-icons/react";
 
 const CategoryManager: React.FC = () => {
@@ -327,6 +330,84 @@ const CategoryManager: React.FC = () => {
           <option value="pie">{t("chart_pie")}</option>
           <option value="doughnut">{t("chart_doughnut")}</option>
         </select>
+      </div>
+
+      {/* Configuración de Moneda */}
+      <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <CurrencyCircleDollar
+            weight="duotone"
+            className="text-blue-400"
+            size={20}
+          />
+          {t("currency")}
+        </h3>
+        <input
+          list="currency-list"
+          value={localStorage.getItem("selectedCurrency") || "USD"}
+          onChange={(e) => {
+            localStorage.setItem("selectedCurrency", e.target.value);
+            window.location.reload();
+          }}
+          placeholder={t("currency_search")}
+          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <datalist id="currency-list">
+          {[
+            "MXN",
+            "USD",
+            "EUR",
+            "GBP",
+            "CAD",
+            "BRL",
+            "COP",
+            "ARS",
+            "CLP",
+            "PEN",
+            "JPY",
+            "AUD",
+            "CHF",
+            "CNY",
+            "INR",
+          ].map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </div>
+
+      {/* Configuración de Apariencia */}
+      <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <SunDim weight="duotone" className="text-blue-400" size={20} />
+          {t("appearance")}
+        </h3>
+        <button
+          onClick={() => {
+            const current = localStorage.getItem("theme") || "dark";
+            const next = current === "dark" ? "light" : "dark";
+            localStorage.setItem("theme", next);
+            const root = document.documentElement;
+            if (next === "light") {
+              root.classList.add("light-theme");
+            } else {
+              root.classList.remove("light-theme");
+            }
+            window.location.reload();
+          }}
+          className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white hover:bg-slate-700 transition-colors w-full"
+        >
+          {localStorage.getItem("theme") === "light" ? (
+            <>
+              <Moon size={20} />
+              <span>{t("dark_mode")}</span>
+            </>
+          ) : (
+            <>
+              <SunDim size={20} />
+              <span>{t("light_mode")}</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Reassign Confirmation Modal */}

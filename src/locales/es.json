@@ -110,5 +110,10 @@
   "dropbox_connected": "Conectado a Dropbox",
   "dropbox_not_connected": "No hay sesión de Dropbox activa.",
   "dropbox_clear_credentials": "Borrar credenciales de Dropbox",
-  "dropbox_blocked_hint": "Sincronización con Dropbox no disponible. El navegador bloquea los scripts de Dropbox. Usa Safari o ventana Incógnito."
+  "dropbox_blocked_hint": "Sincronización con Dropbox no disponible. El navegador bloquea los scripts de Dropbox. Usa Safari o ventana Incógnito.",
+  "currency": "Moneda",
+  "currency_search": "Buscar moneda...",
+  "appearance": "Apariencia",
+  "light_mode": "Modo claro",
+  "dark_mode": "Modo oscuro"
 }
