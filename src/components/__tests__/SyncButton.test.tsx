@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ---- Mocks for this test ----
 const mockTranslation = vi.hoisted(() => ({
@@ -86,8 +86,6 @@ Object.defineProperty(globalThis, "sessionStorage", {
 import SyncButton from "../SyncButton";
 
 describe("SyncButton", () => {
-  const originalLocation = window.location;
-
   beforeEach(() => {
     mockStorage.clear();
     mockSessionStorage.clear();
@@ -95,10 +93,6 @@ describe("SyncButton", () => {
 
     // Mock fetch
     globalThis.fetch = vi.fn();
-  });
-
-  afterEach(() => {
-    window.location = originalLocation;
   });
 
   it("renderiza botón en estado idle cuando no hay token", () => {
@@ -124,13 +118,22 @@ describe("SyncButton", () => {
     let currentHref = window.location.href;
     Object.defineProperty(window, "location", {
       value: {
-        ...originalLocation,
-        get href() {
-          return currentHref;
+        href: currentHref,
+        assign: (url: string) => {
+          currentHref = url;
         },
-        set href(v: string) {
-          currentHref = v;
+        replace: (url: string) => {
+          currentHref = url;
         },
+        reload: () => {},
+        origin: "",
+        protocol: "https:",
+        host: "localhost",
+        hostname: "localhost",
+        port: "",
+        pathname: "/",
+        search: "",
+        hash: "",
       },
       writable: true,
       configurable: true,

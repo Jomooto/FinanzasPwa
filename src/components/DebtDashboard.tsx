@@ -93,14 +93,12 @@ const DebtDashboard: React.FC = () => {
   const cardMap = new Map(cards?.map((c) => [c.id, c]) || []);
 
   // Calculate aggregated stats
-  let overallTotalDebt = 0;
   const debtPerCardMap: Record<string, number> = {};
 
   const processedDebts = (debts || []).map((debt) => {
     const card = cardMap.get(debt.cardId);
     const details = calculateDebtDetails(debt, card);
 
-    overallTotalDebt += details.remainingBalance;
     if (debt.cardId) {
       debtPerCardMap[debt.cardId] =
         (debtPerCardMap[debt.cardId] || 0) + details.remainingBalance;
@@ -112,6 +110,11 @@ const DebtDashboard: React.FC = () => {
       ...details,
     };
   });
+
+  const overallTotalDebt = Object.values(debtPerCardMap).reduce(
+    (sum, v) => sum + v,
+    0,
+  );
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -289,7 +292,6 @@ const DebtDashboard: React.FC = () => {
                   debt,
                   card,
                   monthsPaid,
-                  monthsRemaining,
                   remainingBalance,
                   isInstallmentPending,
                 }) => (

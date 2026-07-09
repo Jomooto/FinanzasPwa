@@ -53,24 +53,6 @@ function sectorPath(
   return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 }
 
-/** Convierte ángulo en grados a path SVG para un arco (utilizado en dona) */
-function arcPath(
-  cx: number,
-  cy: number,
-  r: number,
-  startDeg: number,
-  endDeg: number,
-): string {
-  const startRad = (startDeg - 90) * (Math.PI / 180);
-  const endRad = (endDeg - 90) * (Math.PI / 180);
-  const x1 = cx + r * Math.cos(startRad);
-  const y1 = cy + r * Math.sin(startRad);
-  const x2 = cx + r * Math.cos(endRad);
-  const y2 = cy + r * Math.sin(endRad);
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`;
-}
-
 const ExpenseChart: React.FC<ExpenseChartProps> = ({
   expenses,
   chartType,
@@ -162,20 +144,28 @@ const PieOrDoughnutRenderer: React.FC<{
   const cy = 120;
   const size = 300;
 
-  let currentAngle = 0;
-  const slices = data.map((entry) => {
+  const slices = data.reduce<
+    {
+      name: string;
+      value: number;
+      start: number;
+      end: number;
+      angle: number;
+      pct: string;
+    }[]
+  >((acc, entry) => {
     const angle = (entry.value / total) * 360;
-    const start = currentAngle;
-    const end = currentAngle + angle;
-    currentAngle = end;
-    return {
+    const start = acc.length > 0 ? acc[acc.length - 1].end : 0;
+    const end = start + angle;
+    acc.push({
       ...entry,
       start,
       end,
       angle,
       pct: ((entry.value / total) * 100).toFixed(0),
-    };
-  });
+    });
+    return acc;
+  }, []);
 
   return (
     <div className="flex flex-col items-center">
