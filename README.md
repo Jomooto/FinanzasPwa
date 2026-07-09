@@ -1,73 +1,72 @@
-# React + TypeScript + Vite
+# Financial PWA — Gestor de Finanzas Personales
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web progresiva (PWA) offline-first para el seguimiento de gastos, deudas y tarjetas de crédito. Construida con React, TypeScript, Vite y Dexie (IndexedDB).
 
-Currently, two official plugins are available:
+## Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Registro de Gastos**: Agrega, edita y elimina gastos con soporte multimoneda (conversión automática vía API de tipo de cambio).
+- **Tarjetas de Crédito**: Administra múltiples tarjetas con límite de crédito, día de corte y gestión de efectivo.
+- **Categorías**: Organiza tus gastos en categorías personalizables con opción de renombrar y reasignar.
+- **Dashboard de Deudas**: Registra compras a meses sin intereses (MSI) con seguimiento de pagos, saldo restante y progreso visual.
+- **Gráficas Interactivas**: Visualiza tus gastos por categoría en gráficos de barras, pastel o dona (SVG sin dependencias externas).
+- **Sincronización con Dropbox**: Backup y restauración de datos mediante OAuth PKCE + API de Dropbox. Los datos se sincronizan en segundo plano con resolución de conflictos por timestamp.
+- **Offline-First**: Todos los datos se almacenan localmente en IndexedDB mediante Dexie. La sincronización es opcional.
+- **Exportación**: Exporta tus gastos a CSV o PDF.
+- **Internacionalización**: Soporte para español e inglés con detección automática del idioma del navegador.
+- **PWA**: Instalable como aplicación nativa con service worker y caché offline.
 
-## React Compiler
+## Arquitectura
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/       # Componentes UI atómicos
+│   ├── ExpenseForm.tsx
+│   ├── ExpenseChart.tsx
+│   ├── CardManager.tsx
+│   ├── CategoryManager.tsx
+│   ├── DebtDashboard.tsx
+│   └── SyncButton.tsx
+├── db/               # Esquema y configuración de Dexie (IndexedDB)
+│   └── schema.ts
+├── hooks/            # Custom hooks
+│   ├── useTranslation.ts
+│   ├── useDebtCalculator.ts
+│   └── ...
+├── utils/            # Utilidades
+│   ├── cryptoUtils.ts    # Cifrado AES-GCM (local antes de enviar a Dropbox)
+│   ├── syncUtils.ts      # Normalización/desnormalización para sync
+│   └── periodUtils.ts    # Cálculo de periodos por día de corte
+└── locales/          # Traducciones (en.json, es.json)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Stack Tecnológico
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Tecnología            | Propósito                        |
+| --------------------- | -------------------------------- |
+| React 19 + TypeScript | UI y tipado estricto             |
+| Vite 8                | Bundler y dev server             |
+| Dexie.js              | Base de datos IndexedDB          |
+| Tailwind CSS 4        | Estilos utilitarios              |
+| Recharts              | Gráficas (barras)                |
+| Phosphor Icons        | Iconografía                      |
+| Dropbox API           | Sincronización en la nube        |
+| Vitest + RTL          | Tests unitarios y de integración |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Scripts
+
+```bash
+npm run dev          # Iniciar servidor de desarrollo
+npm run build        # Compilar para producción
+npm run preview      # Vista previa de build
+npm run lint         # ESLint
+npm test             # Ejecutar tests (Vitest)
+npm run test:watch   # Tests en modo watch
+```
+
+## Tests
+
+31 tests unitarios cubriendo los 6 componentes principales con Vitest y React Testing Library, enfocados en interacciones de usuario y estados de UI.
+
+```bash
+npm test
 ```
