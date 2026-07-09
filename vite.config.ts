@@ -8,9 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Financial PWA',
-        short_name: 'Finance',
-        description: 'Offline-First Financial Tracker',
+        name: 'MisFinanzas',
+        short_name: 'MisFinanzas',
+        description: 'Gestor de Finanzas Personales',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

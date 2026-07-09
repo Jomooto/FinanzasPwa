@@ -114,7 +114,6 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({
           total={total}
           innerRadius={0}
           outerRadius={100}
-          label="pie"
         />
       )}
 
@@ -125,7 +124,6 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({
           total={total}
           innerRadius={55}
           outerRadius={100}
-          label="doughnut"
         />
       )}
     </div>
@@ -138,8 +136,7 @@ const PieOrDoughnutRenderer: React.FC<{
   total: number;
   innerRadius: number;
   outerRadius: number;
-  label: "pie" | "doughnut";
-}> = ({ data, total, innerRadius, outerRadius, label }) => {
+}> = ({ data, total, innerRadius, outerRadius }) => {
   const cx = 150;
   const cy = 120;
   const size = 300;
@@ -174,11 +171,6 @@ const PieOrDoughnutRenderer: React.FC<{
         className="w-full max-w-xs"
         style={{ height: 380 }}
       >
-        {/* Título */}
-        <text x={cx} y={20} textAnchor="middle" fill="#94a3b8" fontSize={12}>
-          {label === "pie" ? "Pastel" : "Dona"}
-        </text>
-
         {/* Sectores */}
         {slices.map((slice, i) => {
           const color = COLORS[i % COLORS.length];

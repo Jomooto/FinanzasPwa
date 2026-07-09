@@ -284,7 +284,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, expense }) => {
               </button>
               <button
                 type="submit"
-                className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors shadow-lg shadow-blue-500/30"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
               >
                 {t("save")}
               </button>

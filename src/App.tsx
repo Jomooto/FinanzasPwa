@@ -13,7 +13,7 @@ import { formatPeriodKey } from "./utils/periodUtils";
 import { autoTable } from "jspdf-autotable";
 import ExpenseChart, { type ChartType } from "./components/ExpenseChart";
 import {
-  Wallet,
+  CurrencyCircleDollar,
   Cards,
   Gear,
   Receipt,
@@ -313,7 +313,7 @@ function Dashboard() {
           </div>
           <button
             onClick={() => setShowExpenseForm(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 cursor-pointer text-wrap break-words max-w-[160px] line-clamp-2"
+            className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer text-wrap break-words max-w-[160px] line-clamp-2"
           >
             {t("add_expense")}
           </button>
@@ -504,7 +504,7 @@ function Dashboard() {
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 text-sm font-medium bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors shadow-lg shadow-rose-500/30 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 rounded-lg transition-colors cursor-pointer"
               >
                 {t("confirm")}
               </button>
@@ -530,17 +530,21 @@ function Dashboard() {
 function App() {
   const { t } = useTranslation();
   const location = useLocation();
-  const [theme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "dark",
+  );
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "light") {
-      root.classList.add("light-theme");
-    } else {
-      root.classList.remove("light-theme");
-    }
+    root.classList.toggle("light-theme", theme === "light");
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    const handler = () => setTheme(localStorage.getItem("theme") || "dark");
+    window.addEventListener("theme-change", handler);
+    return () => window.removeEventListener("theme-change", handler);
+  }, []);
 
   const getNavLinkClass = (path: string) => {
     return location.pathname === path
@@ -569,9 +573,11 @@ function App() {
       >
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Wallet weight="duotone" className="text-white" size={20} />
-            </div>
+            <CurrencyCircleDollar
+              weight="duotone"
+              className="text-blue-400"
+              size={20}
+            />
             <h1 className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
               {t("app_title")}
             </h1>
@@ -599,7 +605,7 @@ function App() {
       >
         <div className="max-w-md mx-auto flex justify-between items-center px-6 h-16">
           <Link to="/" className={getNavLinkClass("/")}>
-            <Wallet weight="duotone" size={24} />
+            <CurrencyCircleDollar weight="duotone" size={24} />
             <span className="text-[10px] font-medium">{t("dashboard")}</span>
           </Link>
           <Link to="/cards" className={getNavLinkClass("/cards")}>

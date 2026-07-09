@@ -36,8 +36,7 @@ const CategoryManager: React.FC = () => {
 
   const handleChartTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     localStorage.setItem("chartType", e.target.value);
-    // Forzar re-render recargando la página
-    window.location.reload();
+    // El cambio se reflejará al navegar al Dashboard
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,7 +190,7 @@ const CategoryManager: React.FC = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg transition-colors shadow-lg shadow-blue-500/20 mt-2 cursor-pointer"
+              className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 font-medium py-2 rounded-lg transition-colors mt-2 cursor-pointer"
             >
               {t("save")}
             </button>
@@ -278,7 +277,7 @@ const CategoryManager: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors cursor-pointer"
+                    className="px-4 py-2 text-sm font-medium bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors cursor-pointer"
                   >
                     {t("rename")}
                   </button>
@@ -347,7 +346,7 @@ const CategoryManager: React.FC = () => {
           value={localStorage.getItem("selectedCurrency") || "USD"}
           onChange={(e) => {
             localStorage.setItem("selectedCurrency", e.target.value);
-            window.location.reload();
+            // El cambio se reflejará al recargar la página manualmente
           }}
           placeholder={t("currency_search")}
           className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -386,15 +385,13 @@ const CategoryManager: React.FC = () => {
             const current = localStorage.getItem("theme") || "dark";
             const next = current === "dark" ? "light" : "dark";
             localStorage.setItem("theme", next);
-            const root = document.documentElement;
-            if (next === "light") {
-              root.classList.add("light-theme");
-            } else {
-              root.classList.remove("light-theme");
-            }
-            window.location.reload();
+            document.documentElement.classList.toggle(
+              "light-theme",
+              next === "light",
+            );
+            window.dispatchEvent(new Event("theme-change"));
           }}
-          className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white hover:bg-slate-700 transition-colors w-full"
+          className="flex items-center gap-2 bg-slate-600/20 hover:bg-slate-600/30 text-slate-400 font-medium px-4 py-2 rounded-lg transition-colors w-full"
         >
           {localStorage.getItem("theme") === "light" ? (
             <>
@@ -433,7 +430,7 @@ const CategoryManager: React.FC = () => {
                 </button>
                 <button
                   onClick={handleConfirmReassign}
-                  className="px-4 py-2 text-sm font-medium bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors shadow-lg shadow-rose-500/30 cursor-pointer"
+                  className="px-4 py-2 text-sm font-medium bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 rounded-lg transition-colors cursor-pointer"
                 >
                   {t("reassign_and_delete")}
                 </button>

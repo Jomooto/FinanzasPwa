@@ -179,7 +179,7 @@ const CardManager: React.FC = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg transition-colors shadow-lg shadow-blue-500/20 mt-2 cursor-pointer"
+              className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 font-medium py-2 rounded-lg transition-colors mt-2 cursor-pointer"
             >
               {t("save")}
             </button>
