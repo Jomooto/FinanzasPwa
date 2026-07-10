@@ -271,7 +271,7 @@ const CardManager: React.FC = () => {
               {creditCards.map((card) => (
                 <div
                   key={card.id}
-                  className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex flex-col justify-between h-40 hover:border-slate-600 transition-all group"
+                  className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-800/80 p-5 sm:p-6 rounded-2xl border border-slate-700/60 shadow-lg flex flex-col justify-between h-48 sm:h-52 hover:border-slate-600 transition-all group"
                 >
                   {editingCard === card.id ? (
                     <div className="flex flex-col gap-2 h-full">
