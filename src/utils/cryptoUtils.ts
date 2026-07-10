@@ -21,11 +21,13 @@ export const deriveKey = (base: string): string => {
   return CryptoJS.SHA256(base + salt).toString();
 };
 
-/** Genera una clave aleatoria para cifrado de tokens */
+/** Genera una clave aleatoria criptográficamente segura para cifrado de tokens */
 export const generateCipherKey = (): string => {
-  return Array.from({ length: 32 }, () =>
-    Math.random().toString(36).charAt(2),
-  ).join("");
+  const array = new Uint32Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, (dec) => ("0" + dec.toString(16)).substr(-2)).join(
+    "",
+  );
 };
 
 /** Cifra un texto plano usando AES-256 */

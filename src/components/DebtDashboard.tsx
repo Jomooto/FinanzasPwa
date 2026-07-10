@@ -83,9 +83,12 @@ const DebtDashboard: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
+    const currency =
+      localStorage.getItem("selectedCurrency") ||
+      (lang === "es" ? "MXN" : "USD");
     return new Intl.NumberFormat(lang, {
       style: "currency",
-      currency: "USD",
+      currency,
     }).format(amount);
   };
 
@@ -230,6 +233,7 @@ const DebtDashboard: React.FC = () => {
               </label>
               <input
                 type="number"
+                inputMode="numeric"
                 step="0.01"
                 min="0"
                 value={totalAmount}
@@ -245,6 +249,7 @@ const DebtDashboard: React.FC = () => {
               </label>
               <input
                 type="number"
+                inputMode="numeric"
                 min="1"
                 value={totalMonths}
                 onChange={(e) => setTotalMonths(e.target.value)}

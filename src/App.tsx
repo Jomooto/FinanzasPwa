@@ -9,6 +9,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import type { Expense } from "./db/schema";
 import db from "./db/schema";
+import { decryptExpense } from "./hooks/useFinanceCrypto";
+import { useCryptoIntegrityCheck } from "./hooks/useCryptoIntegrityCheck";
 import { formatPeriodKey } from "./utils/periodUtils";
 import { autoTable } from "jspdf-autotable";
 import ExpenseChart, { type ChartType } from "./components/ExpenseChart";
@@ -26,6 +28,7 @@ import {
 } from "@phosphor-icons/react";
 
 function Dashboard() {
+  useCryptoIntegrityCheck();
   const { t, lang } = useTranslation();
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -36,9 +39,18 @@ function Dashboard() {
   const [chartPeriod, setChartPeriod] = useState<string>("all");
   const [showChart, setShowChart] = useState(true);
   const chartType = (localStorage.getItem("chartType") || "bar") as ChartType;
-  const allExpenses = useLiveQuery(() =>
+  const rawExpenses = useLiveQuery(() =>
     db.expenses.orderBy("date").reverse().toArray(),
   );
+
+  // Descifrar gastos: si ciphertext no existe o es legacy, se usa el raw tal cual.
+  // Si falla el descifrado, el gasto se marca como inaccesible (no se muestra).
+  const allExpenses = useMemo(() => {
+    if (!rawExpenses) return [];
+    return rawExpenses
+      .map((exp) => decryptExpense(exp))
+      .filter((exp): exp is Expense => exp !== null);
+  }, [rawExpenses]);
   const categories = useLiveQuery(() => db.categories.toArray());
 
   // Mapa de categoryId → nombre

@@ -167,6 +167,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, expense }) => {
                 <input
                   id="expense-amount"
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}

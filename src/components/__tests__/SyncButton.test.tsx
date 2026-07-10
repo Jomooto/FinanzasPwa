@@ -16,11 +16,40 @@ const mockTranslation = vi.hoisted(() => ({
   setLang: vi.fn(),
 }));
 
-// Mock cryptoUtils to be identity functions (encrypt/decrypt return same value)
-vi.mock("../../utils/cryptoUtils", () => ({
-  encryptData: (data: string) => data,
-  decryptData: (data: string) => data,
-  generateCipherKey: () => "test-cipher-key",
+// Mock tokenStorage — for legacy sync calls, readDecryptedToken returns "valid-token-present"
+// when the mock token header is stored.
+vi.mock("../../utils/tokenStorage", () => ({
+  saveEncryptedToken: (name: string, value: string) => {
+    window.localStorage.setItem(name + "_head", value.slice(0, 20));
+  },
+  readDecryptedToken: (name: string) => {
+    // Coincide con la implementación real: busca "dropbox_token_head"
+    const key =
+      name === "dropbox_access_token"
+        ? "dropbox_token_head"
+        : "dropbox_refresh_token_head";
+    const head = window.localStorage.getItem(key);
+    return head ? "valid-token-present" : null;
+  },
+  clearTokenCredentials: () => {
+    window.localStorage.removeItem("dropbox_token_head");
+    window.localStorage.removeItem("dropbox_refresh_token_head");
+    window.sessionStorage.removeItem("pkce_verifier");
+  },
+  // New API — async mocks
+  saveAccessToken: async (token: string) => {
+    window.localStorage.setItem("dropbox_token_head", token.slice(0, 20));
+  },
+  saveRefreshToken: async (token: string) => {
+    window.localStorage.setItem(
+      "dropbox_refresh_token_head",
+      token.slice(0, 20),
+    );
+  },
+  rebuildAccessToken: async () => "mock-rebuilt-token",
+  rebuildRefreshToken: async () => "mock-rebuilt-refresh",
+  hasTokenFragments: () => !!window.localStorage.getItem("dropbox_token_head"),
+  initTokenMemoryCache: () => {},
 }));
 
 vi.mock("../../hooks/useTranslation", () => ({
@@ -111,7 +140,8 @@ describe("SyncButton", () => {
   });
 
   it("renderiza botón en estado idle cuando hay token", () => {
-    mockStorage.setItem("dropbox_access_token", "fake-token");
+    // readDecryptedToken ahora busca "dropbox_token_head" (fragmentación)
+    mockStorage.setItem("dropbox_token_head", "fake-token-head-encrypted");
 
     render(<SyncButton />);
 
@@ -158,8 +188,8 @@ describe("SyncButton", () => {
   });
 
   it("muestra estado 'syncing' durante la sincronización", async () => {
-    mockStorage.setItem("dropbox_access_token", "fake-token");
-    mockStorage.setItem("dropbox_refresh_token", "fake-refresh");
+    mockStorage.setItem("dropbox_token_head", "fake-head");
+    mockStorage.setItem("dropbox_refresh_token_head", "fake-refresh-head");
 
     // Make the fetch for upload hang so the component stays in "syncing"
     let resolveUpload: (v: unknown) => void;
@@ -198,8 +228,8 @@ describe("SyncButton", () => {
   });
 
   it("muestra estado 'success' después de sincronizar exitosamente", async () => {
-    mockStorage.setItem("dropbox_access_token", "fake-token");
-    mockStorage.setItem("dropbox_refresh_token", "fake-refresh");
+    mockStorage.setItem("dropbox_token_head", "fake-head");
+    mockStorage.setItem("dropbox_refresh_token_head", "fake-refresh-head");
 
     // Refresh token
     (globalThis.fetch as any).mockResolvedValueOnce({
@@ -233,8 +263,8 @@ describe("SyncButton", () => {
   });
 
   it("maneja error de upload y muestra estado error", async () => {
-    mockStorage.setItem("dropbox_access_token", "fake-token");
-    mockStorage.setItem("dropbox_refresh_token", "fake-refresh");
+    mockStorage.setItem("dropbox_token_head", "fake-head");
+    mockStorage.setItem("dropbox_refresh_token_head", "fake-refresh-head");
 
     // Refresh token
     (globalThis.fetch as any).mockResolvedValueOnce({

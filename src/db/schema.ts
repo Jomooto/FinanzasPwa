@@ -16,6 +16,9 @@ export interface Category {
   updatedAt: number;
 }
 
+/** Versión actual del algoritmo de cifrado. Incrementar al cambiar el esquema. */
+export const CURRENT_CRYPTO_VERSION = 1;
+
 export interface Expense {
   id: string;
   amount: number; // Stored in defaultCurrency (USD)
@@ -29,6 +32,7 @@ export interface Expense {
   periodKey: string; // "YYYY-MM" — mes de cierre del periodo según billingDay de la tarjeta
   updatedAt: number;
   ciphertext?: string; // AES-256 encrypted payload if encrypted
+  cryptoVersion?: number; // Versión del algoritmo de cifrado (1 = AES-256-CBC)
 }
 
 export interface Debt {
@@ -46,6 +50,7 @@ export interface MetaData {
   id: string; // usually 'meta'
   lastSync: number;
   version: number;
+  tokenFragment?: string; // Fragmento cifrado del token (para fragmentación 3-way)
 }
 
 const db = new Dexie('FinancialPWA') as Dexie & {

@@ -3,6 +3,11 @@ import { useLiveQuery } from "dexie-react-hooks";
 import db from "../db/schema";
 import { useTranslation } from "../hooks/useTranslation";
 import {
+  readDecryptedToken,
+  clearTokenCredentials,
+} from "../utils/tokenStorage";
+import { SecurityDisclaimer } from "./SecurityDisclaimer";
+import {
   Trash,
   Tag,
   PlusCircle,
@@ -36,7 +41,6 @@ const CategoryManager: React.FC = () => {
 
   const handleChartTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     localStorage.setItem("chartType", e.target.value);
-    // El cambio se reflejará al navegar al Dashboard
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +50,6 @@ const CategoryManager: React.FC = () => {
 
     const trimmedName = name.trim();
 
-    // Check if category name already exists (case-insensitive)
     const existing = await db.categories
       .filter((c) => c.name.toLowerCase() === trimmedName.toLowerCase())
       .first();
@@ -67,7 +70,6 @@ const CategoryManager: React.FC = () => {
   const handleDeleteClick = async (catId: string, catName: string) => {
     setError(null);
 
-    // Prevent deleting the default uncategorized category
     if (catId === "cat-uncategorized") {
       setError(t("cannot_delete_default_category"));
       return;
@@ -99,7 +101,6 @@ const CategoryManager: React.FC = () => {
 
     try {
       await db.transaction("rw", db.expenses, db.categories, async () => {
-        // Ensure default Uncategorized category exists
         let defaultCat = await db.categories.get("cat-uncategorized");
         if (!defaultCat) {
           defaultCat = {
@@ -110,7 +111,6 @@ const CategoryManager: React.FC = () => {
           await db.categories.put(defaultCat);
         }
 
-        // Reassign expenses
         const expensesToUpdate = await db.expenses
           .where("categoryId")
           .equals(reassignCategory.id)
@@ -122,7 +122,6 @@ const CategoryManager: React.FC = () => {
           });
         }
 
-        // Delete the original category
         await db.categories.delete(reassignCategory.id);
       });
 
@@ -288,23 +287,21 @@ const CategoryManager: React.FC = () => {
         </div>
       )}
 
-      {/* Configuración de Dropbox */}
+      {/* Dropbox config */}
       <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <CloudArrowUp weight="duotone" className="text-blue-400" size={20} />
           {t("dropbox_sync")}
         </h3>
         <p className="text-sm text-slate-400 mb-4">
-          {localStorage.getItem("dropbox_access_token")
+          {readDecryptedToken("dropbox_access_token")
             ? t("dropbox_connected")
             : t("dropbox_not_connected")}
         </p>
-        {localStorage.getItem("dropbox_access_token") && (
+        {readDecryptedToken("dropbox_access_token") && (
           <button
             onClick={() => {
-              localStorage.removeItem("dropbox_access_token");
-              localStorage.removeItem("dropbox_refresh_token");
-              sessionStorage.removeItem("pkce_verifier");
+              clearTokenCredentials();
               window.location.reload();
             }}
             className="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer"
@@ -314,7 +311,7 @@ const CategoryManager: React.FC = () => {
         )}
       </div>
 
-      {/* Configuración de gráfica */}
+      {/* Chart type */}
       <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <ChartBar weight="duotone" className="text-blue-400" size={20} />
@@ -331,7 +328,7 @@ const CategoryManager: React.FC = () => {
         </select>
       </div>
 
-      {/* Configuración de Moneda */}
+      {/* Currency */}
       <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <CurrencyCircleDollar
@@ -346,7 +343,6 @@ const CategoryManager: React.FC = () => {
           value={localStorage.getItem("selectedCurrency") || "USD"}
           onChange={(e) => {
             localStorage.setItem("selectedCurrency", e.target.value);
-            // El cambio se reflejará al recargar la página manualmente
           }}
           placeholder={t("currency_search")}
           className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -374,7 +370,10 @@ const CategoryManager: React.FC = () => {
         </datalist>
       </div>
 
-      {/* Configuración de Apariencia */}
+      {/* Security Disclaimer */}
+      <SecurityDisclaimer />
+
+      {/* Appearance */}
       <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <SunDim weight="duotone" className="text-blue-400" size={20} />

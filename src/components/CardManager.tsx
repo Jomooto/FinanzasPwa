@@ -111,7 +111,7 @@ const CardManager: React.FC = () => {
                 {t("billing_day")}
               </label>
               <input
-                type="number"
+                type="number" inputMode="numeric"
                 min="1"
                 max="31"
                 value={cashCard.billingDay}
@@ -152,7 +152,7 @@ const CardManager: React.FC = () => {
                 {t("billing_day")}
               </label>
               <input
-                type="number"
+                type="number" inputMode="numeric"
                 min="1"
                 max="31"
                 value={billingDay}
@@ -167,7 +167,7 @@ const CardManager: React.FC = () => {
                 {t("limit")}
               </label>
               <input
-                type="number"
+                type="number" inputMode="numeric"
                 step="0.01"
                 min="0"
                 value={limit}

@@ -7,10 +7,13 @@ import {
   type NormalizedData,
 } from "../utils/syncUtils";
 import {
-  encryptData,
-  decryptData,
-  generateCipherKey,
-} from "../utils/cryptoUtils";
+  saveAccessToken,
+  saveRefreshToken,
+  rebuildAccessToken,
+  rebuildRefreshToken,
+  readDecryptedToken,
+  clearTokenCredentials,
+} from "../utils/tokenStorage";
 
 const CLIENT_ID = "gvokhca4iidudga";
 const REDIRECT_URI = window.location.origin;
@@ -32,39 +35,6 @@ const generateCodeChallenge = async (verifier: string) => {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-};
-
-const CIPHER_KEY_STORAGE = "dropbox_cipher_key";
-
-const getTokenCipherKey = (): string => {
-  let key = sessionStorage.getItem(CIPHER_KEY_STORAGE);
-  if (!key) {
-    key = generateCipherKey();
-    sessionStorage.setItem(CIPHER_KEY_STORAGE, key);
-  }
-  return key;
-};
-
-const saveEncryptedToken = (name: string, value: string) => {
-  const key = getTokenCipherKey();
-  localStorage.setItem(name, encryptData(value, key));
-};
-
-const readDecryptedToken = (name: string): string | null => {
-  const encrypted = localStorage.getItem(name);
-  if (!encrypted) return null;
-  try {
-    return decryptData(encrypted, getTokenCipherKey());
-  } catch {
-    return null;
-  }
-};
-
-const clearDropboxCredentials = () => {
-  localStorage.removeItem("dropbox_access_token");
-  localStorage.removeItem("dropbox_refresh_token");
-  sessionStorage.removeItem("pkce_verifier");
-  sessionStorage.removeItem(CIPHER_KEY_STORAGE);
 };
 
 const SyncButton: React.FC = () => {
@@ -94,7 +64,7 @@ const SyncButton: React.FC = () => {
 
     const verifier = sessionStorage.getItem("pkce_verifier");
     if (!verifier) {
-      clearDropboxCredentials();
+      clearTokenCredentials();
       return;
     }
     if (readDecryptedToken("dropbox_access_token")) return;
@@ -117,8 +87,9 @@ const SyncButton: React.FC = () => {
         );
         const data = await response.json();
         if (data.access_token) {
-          saveEncryptedToken("dropbox_access_token", data.access_token);
-          saveEncryptedToken("dropbox_refresh_token", data.refresh_token);
+          // Guardar los 3 fragmentos del token
+          await saveAccessToken(data.access_token);
+          await saveRefreshToken(data.refresh_token);
           window.location.reload();
         } else {
           console.error("Auth error:", data);
@@ -130,6 +101,7 @@ const SyncButton: React.FC = () => {
   }, []);
 
   const handleSync = async () => {
+    // Verificar existencia de token (sync, sin reconstruir)
     if (!readDecryptedToken("dropbox_access_token")) {
       startAuthFlow();
       return;
@@ -138,9 +110,9 @@ const SyncButton: React.FC = () => {
     setStatus("syncing");
     let remoteData: NormalizedData | null = null;
 
-    // Refrescar token
-    let token = readDecryptedToken("dropbox_access_token");
-    const refreshToken = readDecryptedToken("dropbox_refresh_token");
+    // Reconstruir token completo desde fragmentos (async)
+    let token = await rebuildAccessToken();
+    const refreshToken = await rebuildRefreshToken();
 
     // Intentar refrescar token, si falla usar el actual
     if (refreshToken) {
@@ -158,7 +130,7 @@ const SyncButton: React.FC = () => {
           const data = await resp.json();
           if (data.access_token) {
             token = data.access_token;
-            saveEncryptedToken("dropbox_access_token", data.access_token);
+            await saveAccessToken(data.access_token);
           }
         }
         // Si el refresh falla (ej: token aún vigente), seguimos con el actual
@@ -168,7 +140,7 @@ const SyncButton: React.FC = () => {
     }
 
     if (!token) {
-      clearDropboxCredentials();
+      clearTokenCredentials();
       startAuthFlow();
       return;
     }
@@ -189,7 +161,7 @@ const SyncButton: React.FC = () => {
         remoteData = JSON.parse(await dlResponse.text()) as NormalizedData;
       } else if (dlResponse.status === 401) {
         // Token definitivamente inválido → reconectar
-        clearDropboxCredentials();
+        clearTokenCredentials();
         startAuthFlow();
         return;
       }
@@ -218,7 +190,7 @@ const SyncButton: React.FC = () => {
       );
       if (!ulResponse.ok) {
         if (ulResponse.status === 401) {
-          clearDropboxCredentials();
+          clearTokenCredentials();
           startAuthFlow();
           return;
         }
