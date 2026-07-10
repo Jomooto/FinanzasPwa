@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import db from "../db/schema";
 import { useTranslation } from "../hooks/useTranslation";
-import { Trash, CreditCard, PlusCircle, Wallet } from "@phosphor-icons/react";
+import {
+  Trash,
+  CreditCard,
+  PlusCircle,
+  Wallet,
+  PencilSimple,
+} from "@phosphor-icons/react";
 
 const CardManager: React.FC = () => {
   const { t, lang } = useTranslation();
@@ -10,6 +16,10 @@ const CardManager: React.FC = () => {
   const [billingDay, setBillingDay] = useState("");
   const [limit, setLimit] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [editingCard, setEditingCard] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBillingDay, setEditBillingDay] = useState("");
+  const [editLimit, setEditLimit] = useState("");
 
   const cards = useLiveQuery(() => db.cards.toArray());
   const cashCard = cards?.find((c) => c.id === "card-cash");
@@ -48,7 +58,6 @@ const CardManager: React.FC = () => {
   const handleDelete = async (cardId: string) => {
     setError(null);
     try {
-      // Check if there are active debts or expenses linked to this card
       const linkedExpenses = await db.expenses
         .where("cardId")
         .equals(cardId)
@@ -67,9 +76,10 @@ const CardManager: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
+    const currency = localStorage.getItem("selectedCurrency") || "USD";
     return new Intl.NumberFormat(lang, {
       style: "currency",
-      currency: "USD",
+      currency,
     }).format(amount);
   };
 
@@ -82,6 +92,33 @@ const CardManager: React.FC = () => {
       billingDay: day,
       updatedAt: Date.now(),
     });
+  };
+
+  const startEdit = (card: {
+    id: string;
+    name: string;
+    billingDay: number;
+    limit: number;
+  }) => {
+    setEditingCard(card.id);
+    setEditName(card.name);
+    setEditBillingDay(card.billingDay.toString());
+    setEditLimit(card.limit.toString());
+  };
+
+  const saveEdit = async () => {
+    if (!editingCard) return;
+    const billingDayNum = parseInt(editBillingDay);
+    const limitNum = parseFloat(editLimit);
+    if (isNaN(billingDayNum) || billingDayNum < 1 || billingDayNum > 31) return;
+    if (isNaN(limitNum) || limitNum < 0) return;
+    await db.cards.update(editingCard, {
+      name: editName,
+      billingDay: billingDayNum,
+      limit: limitNum,
+      updatedAt: Date.now(),
+    });
+    setEditingCard(null);
   };
 
   return (
@@ -98,31 +135,65 @@ const CardManager: React.FC = () => {
         </div>
       )}
 
-      {/* Cash card config card */}
+      {/* Cash card config - form style identical to add card */}
       {cashCard && (
         <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Wallet weight="duotone" className="text-blue-400" size={20} />
+            <Wallet weight="duotone" className="text-emerald-400" size={20} />
             {t("cash_config")}
           </h3>
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">
+                {t("card_name")}
+              </label>
+              <input
+                type="text"
+                value={t("cash")}
+                disabled
+                className="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-slate-400 cursor-not-allowed"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">
                 {t("billing_day")}
               </label>
               <input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 min="1"
                 max="31"
                 value={cashCard.billingDay}
                 onChange={handleCashBillingDayChange}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
               />
             </div>
-            <div className="text-sm text-slate-400 mt-6">
-              {t("cash_billing_day_hint")}
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">
+                {t("limit")}
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                step="0.01"
+                min="0"
+                value={cashCard.limit}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val) && val >= 0) {
+                    db.cards.update("card-cash", {
+                      limit: val,
+                      updatedAt: Date.now(),
+                    });
+                  }
+                }}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+              />
             </div>
           </div>
+          <p className="text-xs text-slate-500 mt-3">
+            {t("cash_billing_day_hint")}
+          </p>
         </div>
       )}
 
@@ -152,7 +223,8 @@ const CardManager: React.FC = () => {
                 {t("billing_day")}
               </label>
               <input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 min="1"
                 max="31"
                 value={billingDay}
@@ -167,7 +239,8 @@ const CardManager: React.FC = () => {
                 {t("limit")}
               </label>
               <input
-                type="number" inputMode="numeric"
+                type="number"
+                inputMode="numeric"
                 step="0.01"
                 min="0"
                 value={limit}
@@ -200,44 +273,105 @@ const CardManager: React.FC = () => {
                   key={card.id}
                   className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-800/80 p-5 rounded-2xl border border-slate-700/60 shadow-lg flex flex-col justify-between h-40 hover:border-slate-600 transition-all group"
                 >
-                  {/* Card Header */}
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-600/10 rounded-lg text-blue-400">
-                        <CreditCard size={24} weight="duotone" />
+                  {editingCard === card.id ? (
+                    <div className="flex flex-col gap-2 h-full">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={t("card_name")}
+                      />
+                      <span className="text-[10px] text-slate-500 -mt-1 ml-1">
+                        {t("card_name")}
+                      </span>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="1"
+                          max="31"
+                          value={editBillingDay}
+                          onChange={(e) => setEditBillingDay(e.target.value)}
+                          className="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-[10px] text-slate-500 self-end pb-1">
+                          {t("billing_day")}
+                        </span>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          step="0.01"
+                          min="0"
+                          value={editLimit}
+                          onChange={(e) => setEditLimit(e.target.value)}
+                          className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-[10px] text-slate-500 self-end pb-1">
+                          {t("limit")}
+                        </span>
                       </div>
-                      <h4 className="font-semibold text-white text-base truncate max-w-[130px]">
-                        {card.name}
-                      </h4>
+                      <div className="flex gap-2 mt-auto">
+                        <button
+                          onClick={() => setEditingCard(null)}
+                          className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded transition-colors"
+                        >
+                          {t("cancel")}
+                        </button>
+                        <button
+                          onClick={saveEdit}
+                          className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-1 rounded-lg transition-colors"
+                        >
+                          {t("save")}
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(card.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900/50 hover:bg-rose-500/10 border border-slate-700/30 rounded-lg transition-colors cursor-pointer"
-                      title={t("delete_card")}
-                    >
-                      <Trash size={16} />
-                    </button>
-                  </div>
-
-                  {/* Card Details */}
-                  <div className="mt-4">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400">
-                      {t("credit_limit")}
-                    </p>
-                    <p className="text-lg font-bold text-white">
-                      {formatCurrency(card.limit)}
-                    </p>
-                  </div>
-
-                  {/* Card Footer */}
-                  <div className="flex justify-between items-center text-xs text-slate-400 mt-2 border-t border-slate-700/40 pt-2">
-                    <span>
-                      {t("billing_prefix")} {card.billingDay}
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      ID: {card.id.slice(0, 8)}
-                    </span>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-600/10 rounded-lg text-blue-400">
+                            <CreditCard size={24} weight="duotone" />
+                          </div>
+                          <h4 className="font-semibold text-white text-base truncate max-w-[100px]">
+                            {card.name}
+                          </h4>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => startEdit(card)}
+                            className="p-1.5 text-slate-400 hover:text-blue-400 bg-slate-900/50 hover:bg-blue-500/10 border border-slate-700/30 rounded-lg transition-colors cursor-pointer"
+                            title={t("rename_category")}
+                          >
+                            <PencilSimple size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(card.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900/50 hover:bg-rose-500/10 border border-slate-700/30 rounded-lg transition-colors cursor-pointer"
+                            title={t("delete_card")}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                          {t("credit_limit")}
+                        </p>
+                        <p className="text-lg font-bold text-white">
+                          {formatCurrency(card.limit)}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-slate-400 mt-2 border-t border-slate-700/40 pt-2">
+                        <span>
+                          {t("billing_prefix")} {card.billingDay}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          ID: {card.id.slice(0, 8)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
