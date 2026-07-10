@@ -136,7 +136,7 @@ const CardManager: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">
-                {t("card_name")}
+                Nombre
               </label>
               <input
                 type="text"
@@ -186,8 +186,8 @@ const CardManager: React.FC = () => {
               {t("cash_billing_day_hint")}
             </p>
             <button
-              onClick={() => {
-                db.cards.update("card-cash", {
+              onClick={async () => {
+                await db.cards.update("card-cash", {
                   billingDay: cashBillingDay,
                   limit: cashLimit,
                   updatedAt: Date.now(),
