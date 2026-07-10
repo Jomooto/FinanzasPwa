@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import db from "../db/schema";
 import { useTranslation } from "../hooks/useTranslation";
@@ -22,10 +22,29 @@ const CardManager: React.FC = () => {
   const [editLimit, setEditLimit] = useState("");
   const [cashBillingDay, setCashBillingDay] = useState(31);
   const [cashLimit, setCashLimit] = useState(0);
+  const [cashSaved, setCashSaved] = useState(false);
 
   const cards = useLiveQuery(() => db.cards.toArray());
   const cashCard = cards?.find((c) => c.id === "card-cash");
   const creditCards = cards?.filter((c) => c.id !== "card-cash") || [];
+
+  // Sync cash states from DB when cashCard loads
+  useEffect(() => {
+    if (cashCard) {
+      setCashBillingDay(cashCard.billingDay);
+      setCashLimit(cashCard.limit);
+    }
+  }, [cashCard?.billingDay, cashCard?.limit]);
+
+  const saveCashConfig = async () => {
+    await db.cards.update("card-cash", {
+      billingDay: cashBillingDay,
+      limit: cashLimit,
+      updatedAt: Date.now(),
+    });
+    setCashSaved(true);
+    setTimeout(() => setCashSaved(false), 2500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,19 +133,18 @@ const CardManager: React.FC = () => {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
-      {/* Title */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-2">{t("cards")}</h2>
         <p className="text-sm text-slate-400">{t("manage_cards_desc")}</p>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-xl text-sm transition-all duration-300">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-xl text-sm">
           {error}
         </div>
       )}
 
-      {/* Cash card config - form style identical to add card */}
+      {/* Cash card config */}
       {cashCard && (
         <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -160,7 +178,7 @@ const CardManager: React.FC = () => {
                   if (!isNaN(day) && day >= 1 && day <= 31)
                     setCashBillingDay(day);
                 }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             <div>
@@ -177,22 +195,23 @@ const CardManager: React.FC = () => {
                   const val = parseFloat(e.target.value);
                   if (!isNaN(val) && val >= 0) setCashLimit(val);
                 }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs text-slate-500">
-              {t("cash_billing_day_hint")}
-            </p>
+            {cashSaved && (
+              <p className="text-xs text-emerald-400 animate-pulse">
+                ✅ Configuración guardada
+              </p>
+            )}
+            {!cashSaved && (
+              <p className="text-xs text-slate-500">
+                {t("cash_billing_day_hint")}
+              </p>
+            )}
             <button
-              onClick={async () => {
-                await db.cards.update("card-cash", {
-                  billingDay: cashBillingDay,
-                  limit: cashLimit,
-                  updatedAt: Date.now(),
-                });
-              }}
+              onClick={saveCashConfig}
               className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer"
             >
               {t("save")}
@@ -202,7 +221,7 @@ const CardManager: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Form Column */}
+        {/* Add card form */}
         <div className="md:col-span-1 bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 backdrop-blur-sm h-fit">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <PlusCircle weight="duotone" className="text-blue-400" size={20} />
@@ -218,7 +237,7 @@ const CardManager: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("card_name_placeholder")}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -234,7 +253,7 @@ const CardManager: React.FC = () => {
                 value={billingDay}
                 onChange={(e) => setBillingDay(e.target.value)}
                 placeholder={t("billing_day_placeholder")}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -250,7 +269,7 @@ const CardManager: React.FC = () => {
                 value={limit}
                 onChange={(e) => setLimit(e.target.value)}
                 placeholder={t("limit_placeholder")}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -263,13 +282,12 @@ const CardManager: React.FC = () => {
           </form>
         </div>
 
-        {/* List Column */}
+        {/* Card list */}
         <div className="md:col-span-2 space-y-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <CreditCard weight="duotone" className="text-blue-400" size={20} />
             {t("cards_list")}
           </h3>
-
           {creditCards.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {creditCards.map((card) => (
@@ -323,13 +341,13 @@ const CardManager: React.FC = () => {
                       <div className="flex justify-end gap-2 mt-auto">
                         <button
                           onClick={() => setEditingCard(null)}
-                          className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded transition-colors"
+                          className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded"
                         >
                           {t("cancel")}
                         </button>
                         <button
                           onClick={saveEdit}
-                          className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-1.5 rounded-lg transition-colors"
+                          className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-1.5 rounded-lg"
                         >
                           {t("save")}
                         </button>
@@ -349,14 +367,14 @@ const CardManager: React.FC = () => {
                         <div className="flex gap-1">
                           <button
                             onClick={() => startEdit(card)}
-                            className="p-1.5 text-slate-400 hover:text-blue-400 bg-slate-900/50 hover:bg-blue-500/10 border border-slate-700/30 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-blue-400 bg-slate-900/50 hover:bg-blue-500/10 border border-slate-700/30 rounded-lg cursor-pointer"
                             title={t("rename_category")}
                           >
                             <PencilSimple size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete(card.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900/50 hover:bg-rose-500/10 border border-slate-700/30 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900/50 hover:bg-rose-500/10 border border-slate-700/30 rounded-lg cursor-pointer"
                             title={t("delete_card")}
                           >
                             <Trash size={14} />
