@@ -107,7 +107,7 @@ body {
 .light-theme .to-black {
   --tw-gradient-to: #f8fafc !important;
 }
-/* Gradiente del título "MisFinanzas" en modo claro */
+/* Modo claro: título "MisFinanzas" en azul */
 .light-theme .from-white {
   --tw-gradient-from: #2563eb !important;
 }

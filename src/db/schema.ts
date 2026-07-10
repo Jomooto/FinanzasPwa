@@ -28,6 +28,7 @@ export interface Expense {
   date: string; // YYYY-MM-DD
   periodKey: string; // "YYYY-MM" — mes de cierre del periodo según billingDay de la tarjeta
   updatedAt: number;
+  ciphertext?: string; // AES-256 encrypted payload if encrypted
 }
 
 export interface Debt {

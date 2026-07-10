@@ -5,6 +5,7 @@ import { useTranslation } from "../hooks/useTranslation";
 import { X } from "@phosphor-icons/react";
 import type { Expense, Card } from "../db/schema";
 import { computePeriodKey } from "../utils/periodUtils";
+import { encryptExpense } from "../hooks/useFinanceCrypto";
 
 interface ExchangeRate {
   [key: string]: number;
@@ -110,35 +111,29 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onClose, expense }) => {
       }
     }
 
+    const expenseData: Expense = {
+      id: expense?.id || crypto.randomUUID(),
+      amount: finalAmount,
+      originalAmount: parseFloat(amount),
+      currency: selectedCurrency,
+      exchangeRate,
+      description,
+      categoryId,
+      cardId: cardId || "card-cash",
+      date,
+      periodKey,
+      updatedAt: Date.now(),
+    };
+
+    // Cifrar antes de guardar
+    const encrypted = encryptExpense(expenseData);
+
     if (expense) {
       // Modo edición: actualizar gasto existente
-      await db.expenses.update(expense.id, {
-        amount: finalAmount,
-        originalAmount: parseFloat(amount),
-        currency: selectedCurrency,
-        exchangeRate,
-        description,
-        categoryId,
-        cardId: cardId || "card-cash",
-        date,
-        periodKey,
-        updatedAt: Date.now(),
-      });
+      await db.expenses.update(expense.id, encrypted);
     } else {
-      // Modo creación: agregar nuevo gasto
-      await db.expenses.add({
-        id: crypto.randomUUID(),
-        amount: finalAmount,
-        originalAmount: parseFloat(amount),
-        currency: selectedCurrency,
-        exchangeRate,
-        description,
-        categoryId,
-        cardId: cardId || "card-cash",
-        date,
-        periodKey,
-        updatedAt: Date.now(),
-      });
+      // Modo creación: agregar nuevo gasto cifrado
+      await db.expenses.add(encrypted);
     }
 
     onClose();

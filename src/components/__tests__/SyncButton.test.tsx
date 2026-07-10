@@ -16,6 +16,13 @@ const mockTranslation = vi.hoisted(() => ({
   setLang: vi.fn(),
 }));
 
+// Mock cryptoUtils to be identity functions (encrypt/decrypt return same value)
+vi.mock("../../utils/cryptoUtils", () => ({
+  encryptData: (data: string) => data,
+  decryptData: (data: string) => data,
+  generateCipherKey: () => "test-cipher-key",
+}));
+
 vi.mock("../../hooks/useTranslation", () => ({
   useTranslation: () => mockTranslation,
 }));

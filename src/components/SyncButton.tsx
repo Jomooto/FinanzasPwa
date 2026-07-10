@@ -6,6 +6,11 @@ import {
   denormalizeData,
   type NormalizedData,
 } from "../utils/syncUtils";
+import {
+  encryptData,
+  decryptData,
+  generateCipherKey,
+} from "../utils/cryptoUtils";
 
 const CLIENT_ID = "gvokhca4iidudga";
 const REDIRECT_URI = window.location.origin;
@@ -29,10 +34,37 @@ const generateCodeChallenge = async (verifier: string) => {
     .replace(/=+$/, "");
 };
 
+const CIPHER_KEY_STORAGE = "dropbox_cipher_key";
+
+const getTokenCipherKey = (): string => {
+  let key = sessionStorage.getItem(CIPHER_KEY_STORAGE);
+  if (!key) {
+    key = generateCipherKey();
+    sessionStorage.setItem(CIPHER_KEY_STORAGE, key);
+  }
+  return key;
+};
+
+const saveEncryptedToken = (name: string, value: string) => {
+  const key = getTokenCipherKey();
+  localStorage.setItem(name, encryptData(value, key));
+};
+
+const readDecryptedToken = (name: string): string | null => {
+  const encrypted = localStorage.getItem(name);
+  if (!encrypted) return null;
+  try {
+    return decryptData(encrypted, getTokenCipherKey());
+  } catch {
+    return null;
+  }
+};
+
 const clearDropboxCredentials = () => {
   localStorage.removeItem("dropbox_access_token");
   localStorage.removeItem("dropbox_refresh_token");
   sessionStorage.removeItem("pkce_verifier");
+  sessionStorage.removeItem(CIPHER_KEY_STORAGE);
 };
 
 const SyncButton: React.FC = () => {
@@ -65,7 +97,7 @@ const SyncButton: React.FC = () => {
       clearDropboxCredentials();
       return;
     }
-    if (localStorage.getItem("dropbox_access_token")) return;
+    if (readDecryptedToken("dropbox_access_token")) return;
 
     (async () => {
       try {
@@ -85,8 +117,8 @@ const SyncButton: React.FC = () => {
         );
         const data = await response.json();
         if (data.access_token) {
-          localStorage.setItem("dropbox_access_token", data.access_token);
-          localStorage.setItem("dropbox_refresh_token", data.refresh_token);
+          saveEncryptedToken("dropbox_access_token", data.access_token);
+          saveEncryptedToken("dropbox_refresh_token", data.refresh_token);
           window.location.reload();
         } else {
           console.error("Auth error:", data);
@@ -98,7 +130,7 @@ const SyncButton: React.FC = () => {
   }, []);
 
   const handleSync = async () => {
-    if (!localStorage.getItem("dropbox_access_token")) {
+    if (!readDecryptedToken("dropbox_access_token")) {
       startAuthFlow();
       return;
     }
@@ -107,8 +139,8 @@ const SyncButton: React.FC = () => {
     let remoteData: NormalizedData | null = null;
 
     // Refrescar token
-    let token = localStorage.getItem("dropbox_access_token");
-    const refreshToken = localStorage.getItem("dropbox_refresh_token");
+    let token = readDecryptedToken("dropbox_access_token");
+    const refreshToken = readDecryptedToken("dropbox_refresh_token");
 
     // Intentar refrescar token, si falla usar el actual
     if (refreshToken) {
@@ -126,7 +158,7 @@ const SyncButton: React.FC = () => {
           const data = await resp.json();
           if (data.access_token) {
             token = data.access_token;
-            localStorage.setItem("dropbox_access_token", data.access_token);
+            saveEncryptedToken("dropbox_access_token", data.access_token);
           }
         }
         // Si el refresh falla (ej: token aún vigente), seguimos con el actual
@@ -226,7 +258,7 @@ const SyncButton: React.FC = () => {
       <span>
         {status === "syncing"
           ? t("syncing")
-          : localStorage.getItem("dropbox_access_token")
+          : readDecryptedToken("dropbox_access_token")
             ? t("sync_now")
             : t("sync_with_dropbox")}
       </span>
