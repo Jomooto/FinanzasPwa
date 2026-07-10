@@ -186,7 +186,9 @@ describe("CardManager", () => {
     await user.type(screen.getByPlaceholderText(/ej. 15/i), "20");
     await user.type(screen.getByPlaceholderText(/ej. 5000/i), "10000");
 
-    await user.click(screen.getByRole("button", { name: /guardar/i }));
+    // Hay dos botones "Guardar": uno en cash config y otro en add card form
+    const saveButtons = screen.getAllByRole("button", { name: /guardar/i });
+    await user.click(saveButtons[1]); // el segundo es el del formulario add card
 
     await waitFor(() => {
       expect(mockDb.cards.add).toHaveBeenCalled();

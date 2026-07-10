@@ -20,6 +20,8 @@ const CardManager: React.FC = () => {
   const [editName, setEditName] = useState("");
   const [editBillingDay, setEditBillingDay] = useState("");
   const [editLimit, setEditLimit] = useState("");
+  const [cashBillingDay, setCashBillingDay] = useState(31);
+  const [cashLimit, setCashLimit] = useState(0);
 
   const cards = useLiveQuery(() => db.cards.toArray());
   const cashCard = cards?.find((c) => c.id === "card-cash");
@@ -81,17 +83,6 @@ const CardManager: React.FC = () => {
       style: "currency",
       currency,
     }).format(amount);
-  };
-
-  const handleCashBillingDayChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const day = parseInt(e.target.value, 10);
-    if (isNaN(day) || day < 1 || day > 31) return;
-    await db.cards.update("card-cash", {
-      billingDay: day,
-      updatedAt: Date.now(),
-    });
   };
 
   const startEdit = (card: {
@@ -163,8 +154,12 @@ const CardManager: React.FC = () => {
                 inputMode="numeric"
                 min="1"
                 max="31"
-                value={cashCard.billingDay}
-                onChange={handleCashBillingDayChange}
+                value={cashBillingDay}
+                onChange={(e) => {
+                  const day = parseInt(e.target.value, 10);
+                  if (!isNaN(day) && day >= 1 && day <= 31)
+                    setCashBillingDay(day);
+                }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
               />
             </div>
@@ -177,23 +172,32 @@ const CardManager: React.FC = () => {
                 inputMode="numeric"
                 step="0.01"
                 min="0"
-                value={cashCard.limit}
+                value={cashLimit}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value);
-                  if (!isNaN(val) && val >= 0) {
-                    db.cards.update("card-cash", {
-                      limit: val,
-                      updatedAt: Date.now(),
-                    });
-                  }
+                  if (!isNaN(val) && val >= 0) setCashLimit(val);
                 }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
               />
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-3">
-            {t("cash_billing_day_hint")}
-          </p>
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs text-slate-500">
+              {t("cash_billing_day_hint")}
+            </p>
+            <button
+              onClick={() => {
+                db.cards.update("card-cash", {
+                  billingDay: cashBillingDay,
+                  limit: cashLimit,
+                  updatedAt: Date.now(),
+                });
+              }}
+              className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer"
+            >
+              {t("save")}
+            </button>
+          </div>
         </div>
       )}
 
@@ -274,53 +278,58 @@ const CardManager: React.FC = () => {
                   className="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-800/80 p-5 sm:p-6 rounded-2xl border border-slate-700/60 shadow-lg flex flex-col justify-between h-48 sm:h-52 hover:border-slate-600 transition-all group"
                 >
                   {editingCard === card.id ? (
-                    <div className="flex flex-col gap-2 h-full">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={t("card_name")}
-                      />
-                      <span className="text-[10px] text-slate-500 -mt-1 ml-1">
-                        {t("card_name")}
-                      </span>
-                      <div className="flex gap-2">
+                    <div className="flex flex-col gap-3 h-full">
+                      <div>
+                        <label className="text-[10px] text-slate-500 mb-0.5 block">
+                          {t("card_name")}
+                        </label>
                         <input
-                          type="number"
-                          inputMode="numeric"
-                          min="1"
-                          max="31"
-                          value={editBillingDay}
-                          onChange={(e) => setEditBillingDay(e.target.value)}
-                          className="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <span className="text-[10px] text-slate-500 self-end pb-1">
-                          {t("billing_day")}
-                        </span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          step="0.01"
-                          min="0"
-                          value={editLimit}
-                          onChange={(e) => setEditLimit(e.target.value)}
-                          className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <span className="text-[10px] text-slate-500 self-end pb-1">
-                          {t("limit")}
-                        </span>
                       </div>
-                      <div className="flex gap-2 mt-auto">
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-slate-500 mb-0.5 block">
+                            {t("billing_day")}
+                          </label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            max="31"
+                            value={editBillingDay}
+                            onChange={(e) => setEditBillingDay(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-slate-500 mb-0.5 block">
+                            {t("limit")}
+                          </label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            step="0.01"
+                            min="0"
+                            value={editLimit}
+                            onChange={(e) => setEditLimit(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-auto">
                         <button
                           onClick={() => setEditingCard(null)}
-                          className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded transition-colors"
+                          className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded transition-colors"
                         >
                           {t("cancel")}
                         </button>
                         <button
                           onClick={saveEdit}
-                          className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-1 rounded-lg transition-colors"
+                          className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-4 py-1.5 rounded-lg transition-colors"
                         >
                           {t("save")}
                         </button>
